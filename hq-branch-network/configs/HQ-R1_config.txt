@@ -1,0 +1,137 @@
+!
+version 15.1
+no service timestamps log datetime msec
+no service timestamps debug datetime msec
+no service password-encryption
+!
+hostname HQ-R1
+!
+!
+!
+enable secret 5 $1$mERr$MKvUeWgwJSK9f6CyXSu1a/
+!
+!
+ip dhcp excluded-address 10.10.10.1 10.10.10.10
+ip dhcp excluded-address 10.10.20.1 10.10.20.10
+ip dhcp excluded-address 10.10.99.1 10.10.99.10
+!
+ip dhcp pool STAFF
+ network 10.10.10.0 255.255.255.0
+ default-router 10.10.10.1
+ dns-server 198.51.100.10
+ip dhcp pool Guest
+ network 10.10.20.0 255.255.255.0
+ default-router 10.10.20.1
+ dns-server 198.51.100.10
+ip dhcp pool MGMT
+ network 10.10.99.0 255.255.255.0
+ default-router 10.10.99.1
+ dns-server 198.51.100.10
+!
+!
+!
+ip cef
+no ipv6 cef
+!
+!
+!
+username admin secret 5 $1$mERr$wqlcmgi64jc3Tf.9oyZrA/
+!
+!
+license udi pid CISCO2911/K9 sn FTX15246LIP-
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+ip ssh version 2
+ip domain-name routeandrule.local
+!
+!
+spanning-tree mode pvst
+!
+!
+!
+!
+!
+!
+interface GigabitEthernet0/0
+ description Link to HQ-FW inside
+ ip address 10.0.0.2 255.255.255.252
+ duplex auto
+ speed auto
+!
+interface GigabitEthernet0/1
+ no ip address
+ duplex auto
+ speed auto
+!
+interface GigabitEthernet0/1.10
+ encapsulation dot1Q 10
+ ip address 10.10.10.1 255.255.255.0
+!
+interface GigabitEthernet0/1.20
+ encapsulation dot1Q 20
+ ip address 10.10.20.1 255.255.255.0
+ ip access-group GUEST-IN in
+!
+interface GigabitEthernet0/1.99
+ encapsulation dot1Q 99
+ ip address 10.10.99.1 255.255.255.0
+!
+interface GigabitEthernet0/2
+ description WAN to BR-R1
+ ip address 172.16.0.1 255.255.255.252
+ duplex auto
+ speed auto
+!
+interface Vlan1
+ no ip address
+ shutdown
+!
+router ospf 1
+ router-id 1.1.1.1
+ log-adjacency-changes
+ network 10.10.10.0 0.0.0.255 area 0
+ network 10.10.20.0 0.0.0.255 area 0
+ network 10.10.99.0 0.0.0.255 area 0
+ network 172.16.0.0 0.0.0.3 area 0
+ default-information originate
+!
+ip classless
+ip route 0.0.0.0 0.0.0.0 10.0.0.1 
+!
+ip flow-export version 9
+!
+!
+ip access-list extended GUEST-IN
+ deny ip 10.10.20.0 0.0.0.255 10.0.0.0 0.255.255.255
+ deny ip 10.10.20.0 0.0.0.255 172.16.0.0 0.15.255.255
+ permit ip any any
+ip access-list standard MGMT-ONLY
+ permit 10.10.99.0 0.0.0.255
+!
+!
+!
+!
+!
+line con 0
+ login local
+!
+line aux 0
+!
+line vty 0 4
+ access-class MGMT-ONLY in
+ login local
+ transport input ssh
+!
+!
+!
+end
+
